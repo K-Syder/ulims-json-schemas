@@ -11,9 +11,9 @@ by default.
 import json
 import logging
 from collections.abc import Mapping
-from importlib.resources import files
 from pathlib import Path
 
+# Added FormatChecker to import
 from jsonschema import Draft202012Validator, exceptions, FormatChecker
 from referencing import Registry, Resource
 from referencing import exceptions as exceptsref
@@ -22,8 +22,8 @@ from referencing.jsonschema import EMPTY_REGISTRY as _EMPTY_REGISTRY
 # There is an exception outside of exceptions, need to capture
 from referencing.jsonschema import UnknownDialect
 
+# Changed imports to use local variables.
 VALID_MESSAGE = "Valid"
-
 default_format_checker = FormatChecker(["date", "email"])
 
 logger = logging.getLogger("__name__")
@@ -33,22 +33,6 @@ class RegistryError(Exception):
     """Outer exception for jsonschema and referencing packages"""
 
     pass
-
-
-def discover(package: str) -> Path:
-    """Python package containing json schemas or subschemas.
-
-    Returns a source path suitable for passing to the
-    populate function. A "valid" package must have
-    a "sclibrary" folder containing
-    a set of json schemas or subschemas that
-    can be built into a fully resolved "whole" state which
-    validates all $id and $ref statements used within that
-    package. Once package is installed there are
-    no future dependencies (ie. file or http).
-    """
-    folder: str = "sclibrary"
-    return Path(files(package).joinpath(folder))  # type: ignore[arg-type]
 
 
 def populate(source: Path, extension: str = "*.json") -> Registry:
@@ -102,12 +86,47 @@ def _load(found_files: list[Path]) -> Mapping:  # type: ignore
             yield Resource.from_contents(content)
 
 
+def _validate(check: Draft202012Validator, metadata: dict, schemas_folder: Path):
+    """Use registry enabled validator to check metadata if valid."""
+    # The referencing package causes two levels of checking, where
+    # the first occurs BEFORE json metadata is seen. The
+    # second level is done here, causing first exception
+    # block. A third level of checking is done by the
+    # jsonschema package causing the second exception block.
+    try:
+        check.validate(metadata)
+    except exceptsref.Unresolvable as err:
+        # This exception is caused by referencing BUT as of Dec 2024
+        # the object err is WrappedReferencingError from jsonschema
+        # which is a _RefResolutionError. Says deprecated
+        # since 4.18.0 and capture what we are capturing here. The
+        # returned str(err) may need casting removed when wrap goes.
+        # https://github.com/python-jsonschema/jsonschema/blob/main/jsonschema/exceptions.py#L235
+        msg = f"An $id used in a $ref not found within schema folder: {schemas_folder}"
+        logger.warning(msg)
+        logger.error(err, exc_info=True)
+        return False, str(err)
+    except (
+        exceptions.ValidationError,
+        exceptions.SchemaError,
+        exceptions.UndefinedTypeCheck,
+        exceptions.UnknownType,
+        exceptions.FormatError,
+    ) as err:
+        # Like referencing, jsonschema package does not have
+        # parent exception. The above are in order as seen
+        # in module jsonschema.exceptions
+        logger.error(err, exc_info=True)
+        return False, err.message
+    return True, VALID_MESSAGE
+
+
 def validate_data_against_registry(
     metadata: dict,
     schemas_folder: Path,
-    root_id: str = "",
+    root_id: str,
 ) -> tuple[bool, str]:
-    """Check metadata is valid with optional silent mode.
+    """Check metadata is valid.
 
     The schemas_folder can contain a single monolithic json
     schema OR smaller reusable pieces (ie. parent $ref = child $id)
@@ -122,8 +141,6 @@ def validate_data_against_registry(
     the schemas_folder will have an $id that any parent
     can use as a $ref
     """
-    if not root_id:
-        return False, "Requires an ID root to find the whole schema."
     try:
         loaded = populate(schemas_folder)
     except RegistryError as err:
@@ -131,52 +148,15 @@ def validate_data_against_registry(
     try:
         base = loaded.contents(root_id)
     except exceptsref.NoSuchResource as _:
-        msg = f'Check --> "$id" : "{root_id}" <-- exists in file within schema folder: {schemas_folder}'  # noqa: E501
+        msg = f"Check $id: '{root_id}' exists in file "
+        msg += f"within schema folder: {schemas_folder}"
         logger.warning(msg)
         return False, msg
+
     # We need to use the registry within validator so we
     # cannot use "jsonschema.validators.validator_for" as
     # used in other modules.
     check = Draft202012Validator(
         schema=base, registry=loaded, format_checker=default_format_checker
     )
-    # The referencing package causes two levels of checking, where
-    # the first occurs BEFORE json metadata is seen. The
-    # second level is done here. A third level of checking
-    # is done by the jonschema package following this block.
-    try:
-        if check.is_valid(metadata):
-            return True, VALID_MESSAGE
-    except exceptsref.Unresolvable as err:
-        # This exception is caused by referencing BUT as of Dec 2024
-        # the object err is WrappedReferencingError from jsonschema
-        # which is a _RefResolutionError. Says deprecated
-        # since 4.18.0 and capture what we are capturing here. The
-        # returned str(err) may need casting removed when wrap goes.
-        # https://github.com/python-jsonschema/jsonschema/blob/main/jsonschema/exceptions.py#L235
-        msg = f"An $id used in a $ref not found within schema folder: {schemas_folder}"
-        logger.warning(msg)
-        logger.error(err, exc_info=True)
-        return False, str(err)
-
-    # If we reach this point it means the "whole" schema has
-    # failed so track down the cause.
-    try:
-        check.validate(metadata)
-        # Like referencing, jsonschema package does not have
-        # parent exception. The following are in order as seen
-        # in module jsonschema.exceptions
-    except (
-        exceptions.ValidationError,
-        exceptions.SchemaError,
-        exceptions.UndefinedTypeCheck,
-        exceptions.UnknownType,
-        exceptions.FormatError,
-    ) as err:
-        logger.error(err, exc_info=True)
-        return False, err.message
-
-    if True:  # pragma: no cover
-        msg = "Unexpected fallthrough occurred, investigate ASAP"
-        logger.critical(msg)
-        return False, msg
+    return _validate(check, metadata, schemas_folder)
