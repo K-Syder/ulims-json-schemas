@@ -8,12 +8,6 @@
         "geometry"
     ],
     "properties": {
-        "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "Name of sample / ID",
-            "default": ""
-        },
         "preparation-date": {
             "title": "Preparation Date-Time",
             "type": "string",
