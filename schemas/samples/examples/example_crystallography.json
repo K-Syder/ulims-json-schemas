@@ -14,6 +14,12 @@
             "description": "Name of sample / ID",
             "default": ""
         },
+        "preparation-date": {
+            "title": "Preparation Date-Time",
+            "type": "string",
+            "format": "date-time",
+            "description": "The date-time sample preparation was started."
+        },
         "composition": {
             "title": "Composition",
             "type": "string",
