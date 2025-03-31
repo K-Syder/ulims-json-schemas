@@ -4,7 +4,7 @@
     "title": "Crystallography Sample Schema",
     "type": "object",
     "required": [
-        "preparation-date",
+        "preparation_date",
         "geometry"
     ],
     "properties": {
