@@ -8,7 +8,7 @@
         "geometry"
     ],
     "properties": {
-        "preparation-date": {
+        "preparation_date": {
             "title": "Preparation Date-Time",
             "type": "string",
             "format": "date-time",
