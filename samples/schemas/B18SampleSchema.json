@@ -1,0 +1,102 @@
+{
+  "$id": "urn:ulims:b18sample:1.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "B18SampleSchema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "Name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "ChemicalComposition": { 
+      "title": "Chemical Composition",
+      "description": "Chemical composition of the sample, by percentage of chemical elements",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Element": { 
+            "title": "Element",
+            "$ref": "ulims:chemicalelements:1.0"
+          },
+          "Percentage": {
+            "title": "Percentage",
+            "type": "number",
+            "minValue": 0,
+            "maxValue": 100
+         }
+        }
+      }      
+    },
+    "QuantityOfSample": {
+      "title": "Quantity Of Sample",
+      "description": "Weight of Sample in Pellet in mg",
+      "type": "number"
+    },
+    "DiameterOfPellet": {
+      "title": "Diameter of Pellet",
+      "type": "number"
+    },
+    "PelletPreparation": {
+      "title": "Pellet Preparation",
+      "description": "Description of the preparation process",
+      "type": "string",
+      "maxLength": 500
+    },
+    "Binder": {
+      "title": "Binder",
+      "description": "The binder used for the pellet",
+      "enum": ["Cellulose", "Boron Nitride", "Polyethylene Glycol", "Other"]
+    },
+    "Sensitive": {
+      "title": "Sensitive",
+      "description": "Is the sample considered sensitive?",
+      "type": "boolean"
+    },
+    "PelletPosition": {
+      "title": "Pellet Position",
+      "description": "The position of the pellet during the scan",
+      "enum": ["Free Standing", "Plastic Container", "Aluminium Bag", "Plastic Bag"]
+    }
+  },
+  "if": {
+    "properties": {
+      "Binder": { "const": "Other" }
+    }
+  },
+  "then": {
+    "properties": {
+      "OtherBinder": {
+        "title": "Chemical Composition of Binder",
+        "description": "Chemical composition of the binder, by percentage of chemical elements",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "Element": { 
+              "title": "Element",
+              "$ref": "ulims:chemicalelements:1.0"
+            },
+            "Percentage": {
+              "title": "Percentage",
+              "type": "number",
+              "minValue": 0,
+              "maxValue": 100
+            }
+          }
+        } 
+      }
+    }
+  },
+  "required": [
+    "Name",
+    "ChemicalComposition",
+    "QuantityOfSample",  
+    "DiameterOfPellet",
+    "PelletPreparation",
+    "Binder",
+    "Sensitive",
+    "PelletPosition"
+  ]
+}
