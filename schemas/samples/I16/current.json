@@ -1,0 +1,117 @@
+{
+    "$id": "samples/I16/1.0.0",
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "title": "samples/I16",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "ChemicalComposition": {
+            "title": "Chemical Composition",
+            "description": "The chemical composition of the sample",
+            "type": "string"
+        },
+        "SpaceGroup": {
+            "title": "Space Group",
+            "description": "The space group of the sample",
+            "$ref": "/shared/space_groups/1.0.0"
+        },
+        "LatticeParameters": {
+            "title": "Lattice Parameters",
+            "description": "The lattice parameters",
+            "type": "object",
+            "properties": {
+                "A": {
+                    "title": "A",
+                    "description": "Angstrom",
+                    "type": "number"
+                },
+                "B": {
+                    "title": "B",
+                    "description": "Angstrom",
+                    "type": "number"
+                },
+                "C": {
+                    "title": "C",
+                    "description": "Angstrom",
+                    "type": "number"
+                },
+                "Alpha": {
+                    "title": "Alpha",
+                    "description": "Degrees",
+                    "type": "number"
+                },
+                "Beta": {
+                    "title": "Beta",
+                    "description": "Degrees",
+                    "type": "number"
+                },
+                "Gamma": {
+                    "title": "Gamma",
+                    "description": "Degrees",
+                    "type": "number"
+                }
+            }
+        },
+        "CrystalStructure": {
+            "title": "Crystal Structure",
+            "description": "The crystal structure of the sample",
+            "enum": ["Cubic Packed", "Hexagonal Packed", "Body-Centred Cubic", "Simple Cubic", "Diamond Cubic", "Other"]
+        },
+        "Orientation": {
+            "title": "Orientation",
+            "description": "The orientation of the crystal, using Miller indices",
+            "type": "object",
+            "properties": {
+                "h": {
+                    "title": "h",
+                    "description": "h lattice plane",
+                    "type": "string",
+                    "pattern": "\\([0-9], [0-9], [0-9]\\)"
+                },
+                "k": {
+                    "title": "k",
+                    "description": "k lattice plane",
+                    "type": "string",
+                    "pattern": "\\([0-9], [0-9], [0-9]\\)"
+                },
+                "l": {
+                    "title": "l",
+                    "description": "l lattice plane",
+                    "type": "string",
+                    "pattern": "\\([0-9], [0-9], [0-9]\\)"
+                }
+            }
+        },
+        "SafetyPrecautions": {
+            "title": "Safety Precautions",
+            "description": "Safety precautions needed for the sample",
+            "type": "string"
+        },
+        "Temperature": {
+            "title": "Temperature",
+            "description": "The temperature of the sample, in K",
+            "type": "number"
+        },
+        "MultipleSamples": {
+            "title": "Multiple Samples?",
+            "description": "Are there multiple samples?",
+            "type": "boolean"
+        },
+        "Layout": {
+            "title": "Layout",
+            "description": "Is the sample a single crystal, multilayer, or film and substrate?",
+            "enum": ["Single Crystal", "Multilayer", "Film and Substrate"]
+        },
+        "FurtherInformation": {
+            "title": "Further Information",
+            "description": "Links to documents containing further information on the sample",
+            "type": "array"
+        }
+    },
+    "required": [
+        "ChemicalComposition",
+        "CrystalStructure",  
+        "MultipleSamples",
+        "Layout"
+    ]
+}
